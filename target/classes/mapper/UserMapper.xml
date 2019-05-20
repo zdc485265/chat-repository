@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>  
+<!DOCTYPE mapper PUBLIC "-//ibatis.apache.org//DTD Mapper 3.0//EN"
+	"http://ibatis.apache.org//dtd/ibatis-3-mapper.dtd">
+<mapper namespace="chat.dao.UserDao">
+	<select id="findById" parameterType="string" resultType="chat.entity.User">
+		select * from c_user where c_user_id=#{userId}
+	</select>
+	<insert id="Save" parameterType="chat.entity.User">
+		insert into c_user(
+					c_user_id,
+					c_user_name,
+					c_user_password)
+		values(
+					#{c_user_id},
+					#{c_user_name},
+					#{c_user_password}
+		)
+	</insert>
+
+</mapper>

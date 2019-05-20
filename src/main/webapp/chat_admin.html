@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>网页聊天</title>
+	<link href="https://cdn.bootcss.com/bootstrap/3.3.7/css/bootstrap.min.css" rel="stylesheet">
+	<script src="https://cdn.bootcss.com/jquery/2.1.1/jquery.min.js"></script>
+	<script src="https://cdn.bootcss.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+	<script type="text/javascript" src="scripts/cookie_util.js"></script>
+	<script type="text/javascript" src="scripts/basevalue.js"></script>
+	<script type="text/javascript" > 
+		$(function(){
+			//显示聊天框
+			$(document).on("click",".a1",function(){
+				var title=$(this).text();
+				addCookie("friendName",title);
+				console.log(title);
+				$(".title").html(title);
+				$('#d14').hide();
+				$('#d13').hide();
+				$('.d12').hide();
+				$('#'+title+'div').remove();
+				var a='<div id="'+title+'div'+'" class="panel-body" style="font-size:20px;"><p href="#d12" class="a1" style="text-decoration:none;cursor:pointer;">'+title+'</p></div>'
+				$('#huihua').append(a);
+				$('#'+title+'1z').show();
+			});
+			//隐藏聊天,搜索框
+			$(document).on("click",".buttong",function(){
+				$('.d12').hide();
+				$('#d13').hide();
+				$('#d14').hide();
+			});
+			//获取信息
+			var Socket3=null;
+			var userName=getCookie("userName");
+			var url3='ws://localhost:8080/chat/huiWebSocket/'+userName;
+			Socket3=new WebSocket(url3);
+			Socket3.onmessage=function(e){
+				if(e.data=="1"){
+					alert("对方不在线！");
+				}else{
+				var arr=e.data.split(",");
+				var friendName=arr[0];
+				var text=arr[1];
+				console.log(e.data);
+				var li='<li style="text-align:left;font-size:20px;list-style-type:none;">'+friendName+':'+'</li><li style="text-align:left;font-size:25px;list-style-type:none;">'+text+'</li>';
+				$('#'+friendName+'u').append(li);
+				$(".title").html(friendName);
+				$('#'+friendName+'div').remove();
+				var a='<div id="'+friendName+'div'+'" class="panel-body" style="font-size:20px;"><p href="#d12" class="a1" style="text-decoration:none;cursor:pointer;color:red;">'+friendName+'</p></div>'
+				$('#huihua').append(a);
+				$('#d14').hide();
+				$('#d13').hide();
+				$('.d12').hide();
+				$('#'+friendName+'1z').show();
+				}
+			}
+			//发送信息
+			$(document).on("click",".button1",function(){
+				var friendName=getCookie("friendName");
+				var text=$('#'+friendName+'t').val();
+				var li='<li style="text-align:right;font-size:20px;list-style-type:none;">'+userName+':'+'</li><li style="text-align:right;font-size:25px;list-style-type:none;">'+text+'</li>';
+				$('#'+friendName+'u').append(li);
+				$('#'+friendName+'t').val('');
+				var send=friendName+','+text;
+				console.log(send);
+				Socket3.send(send);
+			});
+			//切换会话
+			$('#in1').click(function(){
+				$('#lianxiren').hide();
+				$('#shezhi').hide();
+				$('#huihua').show();
+				$('#d110').html('');
+				var p;
+				var title='会话';
+				p='<p style="color:white;text-align:center;font-size:25px;">'+title+'</p>';
+				$('#d110').append(p);
+			});
+			//切换联系人
+			$('#in2').click(function(){
+				$('#huihua').hide();
+				$('#shezhi').hide();
+				$('#lianxiren').show();
+				$('#d110').html('');
+				var p;
+				var title='联系人';
+				p='<p style="color:white;text-align:center;font-size:25px;">'+title+'</p>';
+				$('#d110').append(p);
+			});
+			//切换设置
+			$("#in3").click(function(){
+				$('#lianxiren').hide();
+				$('#huihua').hide();
+				$('#shezhi').show();
+				$('#d110').html('');
+				$('#ul3').html('');
+				var p;
+				var title='设置';
+				p='<p style="color:white;text-align:center;font-size:25px;">'+title+'</p>';
+				$('#d110').append(p);
+				var userName=getCookie("userName");
+				var li='<li>'+userName+'</li>'
+				$('#ul3').append(li);
+
+			});
+			//添加好友
+			$('#d32').click(function(){
+				$('#d14').hide();
+				$('.d12').hide();
+				$('#d13').show();
+			});
+			$('#i3').click(function(){
+				var fuserId=$('#text2').val();
+				$.ajax({
+					url:path+"/user/sou.do",
+					type:"post",
+					data:{"fuserId":fuserId},
+					datatype:"json",
+					success:function(result){
+						var fuserId=result.data.c_user_id;
+						var fuserName=result.data.c_user_name;
+						addCookie("fuserId",fuserId);
+						var lis='<ul><li style="text-align:left;font-size:25px;list-style-type:none;">'+fuserId+'   '+fuserName+
+								'<input class="i8" type="button" value="添加好友" style="text-align:right;font-size:15px;">'+'</li>'+'</ul>';
+						$('#ssjg').append(lis);
+						
+					},
+					error:function(){
+						alert("sou失败");
+					}
+				});
+			});
+			//webSocket
+			var userId=getCookie("userId");
+			var Socket=null;
+			var Socket2=null;
+			if(!window.WebSocket){
+				alert("浏览器不支持webSocket");
+			}else{
+				startConnect();
+			}
+			function startConnect(){
+				var url2='ws://localhost:8080/chat/fanWebSocket/'+userId;
+				Socket2=new WebSocket(url2);
+				var url='ws://localhost:8080/chat/addWebSocket/'+userId;
+				Socket=new WebSocket(url);
+				$(document).on("click",".i8",function(){
+					var fuserId=getCookie("fuserId");
+					console.log(fuserId);
+					Socket.send(fuserId);
+				});
+				Socket.onopen=function(){
+					console.log("s1发送中");
+				}
+				Socket.onmessage=function(e){
+					var ok=false;
+					var mes=e.data+',申请添加你为好友！点击"是"则同意,否则点击"否"';
+					ok=confirm(mes);
+					if(ok){
+						var friendId=e.data;
+						var userId=getCookie("userId");
+						console.log(userId,friendId);
+						$.ajax({
+							url:path+"/friend/save.do",
+							type:"post",
+							data:{"userId":userId,"friendId":friendId},
+							dataType:"json",
+							success:function(){
+								alert("save成功");
+							},
+							error:function(){
+								alert("save出错");
+							}
+						})
+					}else{
+						var friendId=e.data;
+						Socket2.send(friendId);
+					}
+				}
+				Socket2.onmessage=function(e){
+					confirm(e.data+'拒绝你的申请');
+				}
+			};	
+			
+
+			//退出登录
+			$('#d33').click(function(){
+				window.location.href='chat_log_in.html';
+			});
+			//设置个人信息
+			$('#d31').click(function(){
+				$('#d12').hide();
+				$('#d13').hide();
+				$('#d14').show();
+			});
+			
+});
+</script>
+<link rel="stylesheet" href="styles/alogin.css"/>
+</head>
+<body>
+	<div id="d0"></div>
+	<div id="d1">
+		<div id="d10"></div>
+		<div id="d11">
+			<div id="d110">
+				<p style="color:white;text-align:center;font-size:25px;">会话</p>
+			</div>
+			<div id="d111" class="panel-group">
+				<div id="lianxiren"  style="display:none">
+				</div>
+			<div id="huihua">
+			</div>
+			<div id="shezhi" style="display:none">
+				<div id="d31">
+					<img id="img1" alt="" src="201804011521.png">
+					<ul id="ul3">
+						
+					</ul>
+				</div>
+				<div id="d32">添加好友</div>
+				<div id="d33">退出登录</div>
+			</div>
+		</div>
+			<div id="d112">
+					<input id="in1" class="button" type="button" value="会话">
+					<input id="in2" class="button" type="button" value="联系人">
+					<input id="in3" class="button" type="button" value="设置">
+			</div>
+		</div>
+		<div id="d1z">
+				
+			<div id="d13" style="display:none">
+				<div id="d13c"></div>
+				<div id="d13b">
+					<div id="d13ba">
+						<div id="d13baa"></div>
+						<div id="d13bab"><p style="color:white;text-align:center;font-size:25px;">搜索</p></div>
+						<div id="d13bac"><input id="i4" class="buttong" type="button" value="关闭"></div>
+					</div>
+					<div id="d13a" style="overflow:auto;">
+						<input id="text2" type="text"><input id="i3" type="button" value="搜索">
+						<div class="dsou" id="ssjg">
+						</div>
+					</div>
+				</div>
+			</div>
+			<div id="d14" style="display:none">
+				<div id="d14a"></div>
+				<div id="d14b">
+					<div id="d14ba">
+						<div id="d14baa"></div>
+						<div id="d14bab"><p style="color:white;text-align:center;font-size:25px;">编辑个人信息</p></div>
+						<div id="d14bac"><input id="i5" class="buttong" type="button" value="关闭"></div>
+					</div>
+					<div id="d14c" style="overflow:auto;background-color:gray;filter:alpha(Opacity=80);-moz-opacity:0.9;opacity: 0.9;">
+						<div style="width:680px;height:400px;">
+							<ul style="font-size:20px;color:white;list-style-type:none;">
+								<li style="margin:10px;">昵称:<input class="bianji" type="text" value="秒速" style="background-color:white;color:black;">
+								<li style="margin:10px;">性别:男<input type="radio" name="sex" value="男" checked="checked">女<input type="radio" name="sex" value="女">
+								<li style="margin:10px;">生日:<input class="bianji" type="text" value="1997.08.27" style="background-color:white;color:black;">							
+								<li style="margin:10px;text-align:top;">签名:<textarea rows="3" cols="23" style="background-color:white;color:black;"></textarea>
+							</ul>
+						</div>
+						<div style="width:680px;height:50px;">
+							<input id="i6" type="submit" value="提交" style="margin:5px;">
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+</body>
+<script type="text/javascript">
+	$(function(){
+		//登录事项
+		var userId=getCookie("userId");
+		$.ajax({
+			url:path+"/group/index1.do",
+			type:"post",
+			async:false,
+			data:{"userId":userId},
+			datatype:"json",
+			success:function(result){
+				console.log(result);
+				if(result.status==0){
+					var groups=result.data;
+					for(var i=0;i<groups.length;i++){
+						var groupId=groups[i].c_group_id;
+						var groupName=groups[i].c_group_name;
+						var groupNames='groupName'+i;
+						var groupIds='groupId'+i;
+						addCookie(groupIds,groupId);
+						addCookie("i",i,5);
+						addCookie(groupNames,groupName);
+						addGroup(i,groupId,groupName);
+					}
+					
+				}
+			},
+			error:function(){
+				alert("系统出错1");	
+			}
+		});
+		function addGroup(i,groupId,groupName){
+		var sdiv=
+		'<div class="panel panel-default">'+
+			'<div id="'+groupId+i+'" class="panel-heading">'+
+				'<h4 class="panel-title">'+
+					'<a data-toggle="collapse" data-parent="#d111" href="#'+groupId+'" style="text-decoration:none;">'+
+				 	 		groupName+
+					'</a>'+
+				'</h4>'+
+			'</div>'+
+			'<div id="'+groupId+'" class="panel-collapse collapse">'+
+				
+			'</div>'+
+		'</div>;';
+		var $div=$(sdiv);
+		$div.data("groupId",groupId);
+		$("#lianxiren").append($div);
+}
+		//加载好友	
+			var is=getCookie("i");
+			for(var i=0;i<=is;i++){
+				var groupIds='groupId'+i;
+				var groupId=getCookie(groupIds);
+				var divc='#'+groupId+i;
+					$.ajax({
+						url:path+"/friend/index2.do",
+						type:"post",
+						data:{"groupId":groupId},
+						datatype:"json",
+						success:function(result){
+							if(result.status==0){
+								var friends=result.data;
+								for(var i=0;i<friends.length;i++){
+									console.log("1");
+									var friendName=friends[i].c_friend_name;
+									var groupId=friends[i].c_group_id;
+									addFriend(groupId,friendName);
+								}
+							}
+						},
+						error:function(){
+							alert("系统出错2");
+						}
+					});
+					function addFriend(groupId,friendName){
+						var sdiv='<div class="panel-body">'+
+							'<a href="#d12" class="a1" style="text-decoration:none;">'+friendName+'</a>'+
+							'</div>';
+						var $div=$(sdiv);
+						var adiv='#'+groupId;
+						$(adiv).append($div);
+						var div='<div id="'+friendName+'1z" class="d12" style="display:none">'+
+						'<div id="d12a"></div>'+
+						'<div id="d12b">'+
+							'<div id="d12ba">'+
+								'<div id="d12baa"></div>'+
+								'<div id="d12bab"><p class="title" style="color:white;text-align:center;font-size:25px;">'+friendName+'</p></div>'+
+								'<div id="d12bac"><input class="buttong" type="button" value="关闭"></div>'+
+								
+							'</div>'+
+							'<div id="d12bb" style="overflow:auto;">'+
+								'<ul id="'+friendName+'u" class="ul1">'+
+								'</ul>'+
+							'</div>'+
+							'<div id="d12bc">'+
+								'<div id="d12bca"></div>'+
+								'<div id="d12bcb">'+
+									'<input id="'+friendName+'t" class="text1" type="text"> <input id="'+friendName+'i" class="button1" type="button" value="发送">'+
+								'</div>'+
+							'</div>'+
+						'</div>'+
+					'</div>';
+					$('#d1z').append(div);
+						
+					}
+					
+			}
+			});
+</script>
+</html>
